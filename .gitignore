@@ -1,0 +1,16 @@
+﻿# 依赖与构建产物
+node_modules/
+frontend/dist/
+
+# 环境配置(含数据库密码/JWT密钥, 严禁提交)
+.env
+.env.remote
+.env.local
+
+# 备份与日志
+backups/
+*.log
+
+# 编辑器
+.vscode/
+.idea/
