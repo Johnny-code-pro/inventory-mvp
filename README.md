@@ -1,13 +1,48 @@
-# 轻量物料进销存 MVP
+# 轻量物料进销存系统
 
-简易库存管理(非完整 ERP)。技术栈: **Vue3 + Element Plus + Node.js Express + MySQL**。
+<div align=center>
 
-## 核心铁则
+**面向小型团队的轻量库存与物料管理工具**
+
+用一套清晰、可追溯的出入库流水管理物料、库存、采购在途和产品 BOM。
+
+![Vue 3](https://img.shields.io/badge/Vue-3-42b883?logo=vuedotjs&logoColor=white)
+![Element Plus](https://img.shields.io/badge/Element%20Plus-UI-409eff)
+![Express](https://img.shields.io/badge/Express-4-404d59?logo=express)
+![MySQL](https://img.shields.io/badge/MySQL-8-4479a1?logo=mysql&logoColor=white)
+![状态](https://img.shields.io/badge/状态-MVP-orange)
+
+</div>
+
+这是一个适用于小型仓库、生产与物料管理场景的轻量进销存项目。系统覆盖物料建档、采购入库、领用出库、在途采购、库存预警和 BOM 配方核算，并提供角色权限、审计日志及 Excel 导入导出。
+
+项目采用 **Vue 3 + Element Plus** 构建前端，使用 **Node.js + Express** 提供 API，并以 **MySQL** 保存业务数据。支持 Windows 本地启动、局域网访问，也提供 Linux 部署脚本。它是便于学习、试用和二次开发的 MVP，不是完整 ERP。
+
+## 项目亮点
+
+- **流水驱动库存**：当前库存由有效入库流水减去有效出库流水实时计算，不另存一份容易失真的库存数。
+- **业务留痕**：流水记录单据编号、操作人和时间；作废单据保留在台账中，库存核算时排除。
+- **支持 BOM 生产核算**：按产品配方汇总配件需求，提供可组装数量和生产缺料计算。
+- **覆盖常见仓库流程**：支持批量出入库、采购在途与分批到货、退货、库存调整和低库存筛选。
+- **便于日常使用**：提供 Excel 导入导出、用户角色管理、登录及操作日志。
+- **适合小团队部署**：开发模式使用前后端分离服务；构建后可由后端在单端口托管前端。
+
+## 快速导航
+
+- [功能模块](#功能模块)
+- [技术栈](#技术栈)
+- [核心数据规则](#核心数据规则)
+- [项目目录](#项目目录)
+- [本地启动步骤](#本地启动步骤)
+- [局域网访问](#局域网访问同网络电脑直接使用)
+- [Linux 服务器部署](#部署到-linux-服务器给别人用一劳永逸)
+
+## 核心数据规则
 
 > **库存 = 累计入库流水 - 累计出库流水**
 > 数据库里**没有**"库存"字段，一切库存数字均由 `flows` 出入库流水实时推导，禁止直接修改库存。所有单据留痕(操作人 + 操作时间)，可审计。
 
-## 功能清单
+## 功能模块
 
 | 模块 | 说明 | 权限 |
 |------|------|------|
@@ -23,65 +58,32 @@
 | 用户管理 | 增删用户、改角色、重置密码 | 超级管理员 |
 | 系统设置 | 系统名称/默认安全库存/低库存预警开关 | 超级管理员 |
 
-## 项目目录
+## 界面预览
+
+运行环境中尚未准备可登录的演示数据库，因此暂不附未验证的界面图片。连接本地数据库并准备好演示数据后，可从真实运行的库存看板采集截图并添加到此处。
+
+## 技术栈
+
+| 部分 | 技术 |
+|------|------|
+| 前端 | Vue 3、Vue Router、Element Plus、Axios、Vite |
+| 后端 | Node.js、Express、JWT、bcryptjs |
+| 数据库 | MySQL 8、mysql2 |
+| 表格 | SheetJS（xlsx），支持 Excel 导入与导出 |
+
+## 项目结构
 
 ```
 inventory-mvp/
-├── sql/
-│   └── init.sql                  # 建表 SQL(后端启动时自动执行, 也可手动执行)
-├── server/                       # 后端 Node.js Express
-│   ├── app.js                    # 入口: 启动时自动建库建表+初始化默认账号
-│   ├── package.json
-│   ├── .env                      # 数据库/JWT 配置(本地)
-│   ├── config/
-│   │   └── db.js                 # MySQL 连接池
-│   ├── middleware/
-│   │   └── auth.js               # JWT 鉴权 + 角色校验(管理员/超管)
-│   ├── routes/
-│   │   ├── auth.js               # 登录(限流) + 当前用户
-│   │   ├── materials.js          # 物料档案 CRUD + Excel导入
-│   │   ├── products.js           # 成品 + BOM配方管理
-│   │   ├── flows.js              # 批量入库/出库/成品出入库/作废/导入 + 台账
-│   │   ├── inventory.js          # 库存看板/统计/可组装成品/低库存
-│   │   ├── intransit.js          # 在途物料
-│   │   ├── users.js              # 用户管理(仅超管)
-│   │   ├── settings.js           # 系统设置(仅超管可改)
-│   │   └── audit.js              # 审计日志
-│   ├── scripts/
-│   │   ├── initDb.js             # 建库建表 + 初始化默认账号
-│   │   └── changePassword.js     # 改密码工具
-│   └── utils/
-│       ├── flowNo.js             # 流水号(原子序列表, 并发不撞号)
-│       ├── audit.js              # 操作审计
-│       ├── paginate.js           # 分页安全解析
-│       ├── materialCat.js        # 物料大类推断
-│       └── excel.js              # Excel 导出
-├── frontend/                     # 前端 Vue3 + Element Plus
-│   ├── src/
-│   │   ├── views/                # 各页面(看板/物料/产品配方/出入库/在途/台账/审计/用户/设置)
-│   │   ├── router/index.js
-│   │   ├── api/index.js
-│   │   └── layout/MainLayout.vue # 布局+角色菜单
-├── excel模板/                    # 四表/五表 Excel 模板
-└── *.bat                         # 一键启动/局域网/MySQL远程脚本
-    ├── index.html
-    ├── vite.config.js            # /api 代理到后端 3000
-    ├── package.json
-    └── src/
-        ├── main.js               # 入口(挂载 Element Plus 中文)
-        ├── App.vue
-        ├── router/index.js       # 路由 + 登录守卫
-        ├── api/index.js          # axios 封装(token/错误拦截)
-        ├── utils/auth.js         # 登录态存取
-        ├── layout/MainLayout.vue # 侧边栏 + 顶栏布局
-        └── views/
-            ├── Login.vue         # 登录页
-            ├── Dashboard.vue     # 库存看板(低库存标红)
-            ├── Materials.vue     # 物料档案(管理员维护)
-            ├── Inbound.vue       # 入库单
-            ├── Outbound.vue      # 出库单
-            └── Flows.vue         # 流水台账 + Excel 导出
+├── frontend/                 # Vue 3 前端页面与组件
+├── server/                   # Express API、业务路由与工具
+├── sql/                      # 数据库初始化及迁移脚本
+├── excel模板/                # 库存管理 Excel 模板
+├── deploy.sh                 # Linux 部署脚本
+├── start.bat                 # Windows 启动脚本
+└── README.md                 # 项目介绍与使用说明
 ```
+
 
 ## 依赖清单
 
@@ -250,7 +252,7 @@ pm2 restart inventory-mvp # 重启服务
 
 ## 安全说明
 
-- 已更换随机 `JWT_SECRET`；登录接口限流(同一IP失败5次锁15分钟)。
-- 局域网脚本 `enable-lan-access.bat` 仅开放3000；3306 需单独运行 `enable-mysql-remote.bat`(用完运行 `close-mysql-remote.bat` 关闭)。
-- 前端 Excel 由浏览器端 `xlsx` 库生成/解析，后端零文件依赖。
-- 依赖 `xlsx@0.18.5` 为 SheetJS 在 npm 的最后版本(含已知CVE)，如后续升级可改用其官方维护源。
+- 部署前请在 `server/.env` 中配置数据库连接信息，并设置足够强的 `JWT_SECRET`。不要将 `.env`、密码或备份文件提交到版本库。
+- 首次初始化会创建默认账号。开始使用前请修改默认密码；公网部署时不要保留公开的初始凭据。
+- 不要将 MySQL 的 `3306` 端口直接暴露到公网。确需局域网远程连接时，应限制来源 IP，并在不使用时关闭访问规则。
+- 公网环境建议通过 HTTPS 反向代理提供服务，并定期验证数据库备份可以恢复。
